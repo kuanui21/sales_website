@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二手交易平台</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        header {
+            background-color: #0066cc;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 10px 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        nav ul li {
+            margin-left: 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .search-form {
+            margin: 20px 0;
+            display: flex;
+        }
+        .search-form input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-right: none;
+            border-radius: 5px 0 0 5px;
+        }
+        .search-form button {
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .item-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+        }
+        .item-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .item-info {
+            padding: 15px;
+        }
+        .scroll-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 40px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>二手交易平台</h1>
+            <nav>
+                <ul>
+                    <li><a href="#">我的帳戶</a></li>
+                    <li><a href="#">我的商品</a></li>
+                    <li><a href="#">聯絡我們</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <form id="searchForm" class="search-form">
+            <input type="text" id="searchInput" placeholder="搜索商品...">
+            <button type="submit">搜索</button>
+        </form>
+
+        <div id="itemsGrid" class="items-grid"></div>
+    </main>
+
+    <button id="scrollTopBtn" class="scroll-top">↑</button>
+
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            &copy; 2024 二手交易平台. 版權所有.
+        </div>
+    </footer>
+
+    <script>
+        $(document).ready(function() {
+            // 模擬商品數據
+            let items = Array.from({ length: 10 }, (_, i) => ({
+                id: i + 1,
+                title: `商品 ${i + 1}`,
+                description: '這是一個很棒的二手商品，品質良好，價格實惠。',
+                price: Math.floor(Math.random() * 10000) + 100,
+                image: `https://picsum.photos/300/200?random=${i+1}`,
+                date: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toLocaleDateString(),
+                seller: `賣家${i + 1}`,
+                location: ['台北', '新北', '桃園', '台中', '高雄'][Math.floor(Math.random() * 5)],
+                condition: ['全新', '幾乎全新', '輕微使用痕跡', '正常使用痕跡', '明顯使用痕跡'][Math.floor(Math.random() * 5)]
+            }));
+
+            let filteredItems = [...items];
+
+            // 顯示商品
+            function displayItems() {
+                const itemsGrid = $('#itemsGrid');
+                itemsGrid.empty();
+                filteredItems.forEach(item => {
+                    const itemElement = $('<div>').addClass('item-card').html(`
+                        <img src="${item.image}" alt="${item.title}">
+                        <div class="item-info">
+                            <h2>${item.title}</h2>
+                            <p>${item.description}</p>
+                            <p><strong>NT$ ${item.price}</strong></p>
+                        </div>
+                    `).data('item', item);
+                    itemsGrid.append(itemElement);
+                });
+            }
+
+            // 搜索功能
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                const searchTerm = $('#searchInput').val().toLowerCase();
+                filteredItems = items.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) || 
+                    item.description.toLowerCase().includes(searchTerm)
+                );
+                displayItems();
+            });
+
+            // 回到頂部按鈕
+            const scrollTopBtn = $('#scrollTopBtn');
+            $(window).scroll(function() {
+                if ($(this).scrollTop() > 300) {
+                    scrollTopBtn.show();
+                } else {
+                    scrollTopBtn.hide();
+                }
+            });
+
+            scrollTopBtn.click(function() {
+                $('html, body').animate({scrollTop : 0}, 800);
+            });
+
+            // 商品詳情彈窗
+            const modal = $('#itemModal');
+            const modalContent = $('#modalContent');
+            const closeBtn = $('.close');
+
+            $(document).on('click', '.item-card', function() {
+                const item = $(this).data('item');
+                modalContent.html(`
+                    <h2>${item.title}</h2>
+                    <img src="${item.image}" alt="${item.title}" style="max-width: 100%; height: auto;">
+                    <p>${item.description}</p>
+                    <p><strong>價格：</strong> NT$ ${item.price}</p>
+                    <p><strong>上架日期：</strong> ${item.date}</p>
+                    <p><strong>賣家帳號：</strong> ${item.seller}</p>
+                    <p><strong>交易地點：</strong> ${item.location}</p>
+                    <p><strong>商品狀況：</strong> ${item.condition}</p>
+                `);
+                modal.show();
+            });
+
+            closeBtn.click(function() {
+                modal.hide();
+            });
+
+            $(window).click(function(event) {
+                if (event.target == modal[0]) {
+                    modal.hide();
+                }
+            });
+
+            // 初始顯示商品
+            displayItems();
+        });
+    </script>
+</body>
+</html>
